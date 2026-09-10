@@ -1,6 +1,7 @@
-.PHONY: run test lint format tidy
+.PHONY: run test lint format tidy docs
 
 run:
+	swag init -g main.go -o docs --parseInternal
 	go run .
 
 test:
@@ -14,3 +15,6 @@ lint:
 
 tidy:
 	go mod tidy
+
+docs:
+	swag init -g main.go -o docs --parseInternal

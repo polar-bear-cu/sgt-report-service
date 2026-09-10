@@ -11,6 +11,7 @@ type Config struct {
 	Port             string
 	JWTSecret        string
 	SubscriptionAddr string
+	SwaggerEnabled   bool
 }
 
 func Load() (*Config, error) {
@@ -19,6 +20,7 @@ func Load() (*Config, error) {
 		Port:             env("PORT", "8080"),
 		JWTSecret:        os.Getenv("JWT_SECRET"),
 		SubscriptionAddr: env("SUBSCRIPTION_SERVICE_ADDR", "localhost:50051"),
+		SwaggerEnabled:   env("ENABLE_SWAGGER", "false") == "true",
 	}
 	if cfg.JWTSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET required")

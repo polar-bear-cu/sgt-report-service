@@ -16,6 +16,13 @@ func NewReport(uc *usecases.ReportUsecase) *ReportController {
 	return &ReportController{uc: uc}
 }
 
+// GetMyReport godoc
+// @Summary  spending report for the current user
+// @Tags     reports
+// @Produce  json
+// @Success  200  {object}  dtos.ReportResponse
+// @Failure  502  {object}  map[string]string
+// @Router   /api/v1/reports/me [get]
 func (ctl *ReportController) GetMyReport(c *gin.Context) {
 	report, err := ctl.uc.GenerateReport(c.Request.Context(), c.GetString("user_id"))
 	if err != nil {
