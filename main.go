@@ -4,6 +4,9 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/polar-bear-cu/sgt-report-service/clients"
 	"github.com/polar-bear-cu/sgt-report-service/config"
 	"github.com/polar-bear-cu/sgt-report-service/controllers"
@@ -17,7 +20,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	src := clients.StubSubscriptionSource{}
+	subConn, err := grpc.NewClient(cfg.SubscriptionAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = subConn.Close() }()
+
+	src := clients.NewSubscriptionClient(subConn)
 	uc := usecases.NewReport(src)
 	reportCtrl := controllers.NewReport(uc)
 
