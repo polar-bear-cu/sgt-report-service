@@ -57,5 +57,11 @@ Document is at http://localhost:8086/swagger/index.html (ต้อง `ENABLE_SW
 
 ```terminal
 cd ..
+go work init ./sgt-proto ./sgt-report-service
+```
+
+หรือถ้ามี go.work แล้ว...
+
+```terminal
 go work use ./sgt-proto ./sgt-report-service
 ```
