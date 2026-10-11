@@ -41,7 +41,7 @@ func main() {
 	reportCtrl := controllers.NewReport(uc)
 
 	r := gin.Default()
-	routes.Register(r, reportCtrl, cfg.SwaggerEnabled)
+	routes.Register(r, reportCtrl, cfg.JWTSecret, cfg.SwaggerEnabled)
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: r}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
