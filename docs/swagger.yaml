@@ -8,37 +8,12 @@ definitions:
       timestamp:
         type: string
     type: object
-  dtos.ReportResponse:
-    properties:
-      subscriptionCount:
-        type: integer
-      userId:
-        type: string
-    type: object
 info:
   contact: {}
   description: Subscription spending report for the Subglutee project
   title: Report Service API
   version: "1.0"
 paths:
-  /api/v1/reports/me:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dtos.ReportResponse'
-        "502":
-          description: Bad Gateway
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: spending report for the current user
-      tags:
-      - reports
   /health:
     get:
       produces:

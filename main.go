@@ -30,6 +30,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	loc, err := time.LoadLocation("Asia/Bangkok")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	subConn, err := grpc.NewClient(cfg.SubscriptionAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal(err)
@@ -37,7 +42,7 @@ func main() {
 	defer func() { _ = subConn.Close() }()
 
 	src := clients.NewSubscriptionClient(subConn)
-	uc := usecases.NewReport(src)
+	uc := usecases.NewReport(src, loc)
 	reportCtrl := controllers.NewReport(uc)
 
 	r := gin.Default()

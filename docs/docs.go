@@ -15,34 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/reports/me": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "reports"
-                ],
-                "summary": "spending report for the current user",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dtos.ReportResponse"
-                        }
-                    },
-                    "502": {
-                        "description": "Bad Gateway",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/health": {
             "get": {
                 "produces": [
@@ -74,17 +46,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
-        "dtos.ReportResponse": {
-            "type": "object",
-            "properties": {
-                "subscriptionCount": {
-                    "type": "integer"
-                },
-                "userId": {
                     "type": "string"
                 }
             }

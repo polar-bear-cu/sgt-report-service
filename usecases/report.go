@@ -1,36 +1,30 @@
 package usecases
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
-type Subscription struct {
-	ID     string
-	UserID string
+type Charge struct {
+	ID                 string
+	SubscriptionID     string
+	Name               string
+	Category           string
+	Type               string
+	Amount             float64
+	ChargedAt          time.Time
+	SubscriptionStatus string
 }
 
-type SubscriptionSource interface {
-	ListForReport(ctx context.Context, userID string) ([]Subscription, error)
-}
-
-type Report struct {
-	UserID            string
-	SubscriptionCount int
+type ChargeSource interface {
+	ListCharges(ctx context.Context, userID string, from, to time.Time) ([]Charge, error)
 }
 
 type ReportUsecase struct {
-	subs SubscriptionSource
+	charges ChargeSource
+	loc     *time.Location
 }
 
-func NewReport(subs SubscriptionSource) *ReportUsecase {
-	return &ReportUsecase{subs: subs}
-}
-
-func (u *ReportUsecase) GenerateReport(ctx context.Context, userID string) (Report, error) {
-	list, err := u.subs.ListForReport(ctx, userID)
-	if err != nil {
-		return Report{}, err
-	}
-	return Report{
-		UserID:            userID,
-		SubscriptionCount: len(list),
-	}, nil
+func NewReport(charges ChargeSource, loc *time.Location) *ReportUsecase {
+	return &ReportUsecase{charges: charges, loc: loc}
 }
