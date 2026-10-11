@@ -21,4 +21,5 @@ func Register(r *gin.Engine, report *controllers.ReportController, jwtSecret str
 
 	reports := v1.Group("/reports")
 	reports.GET("/monthly", report.GetMonthly)
+	reports.GET("/subscriptions", report.GetBySubscription)
 }

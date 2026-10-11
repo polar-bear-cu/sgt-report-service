@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -52,8 +53,56 @@ func (ctl *ReportController) GetMonthly(c *gin.Context) {
 	})
 }
 
+// GetBySubscription godoc
+// @Summary  total spent per subscription in a month range (default: last 12 months), highest first
+// @Tags     reports
+// @Produce  json
+// @Param    query  query     dtos.SpendingBySubscriptionQuery  false  "from / to as YYYY-MM, both included"
+// @Success  200    {object}  dtos.SpendingBySubscriptionResponse
+// @Failure  400    {object}  map[string]string
+// @Failure  401    {object}  map[string]string
+// @Failure  502    {object}  map[string]string
+// @Security BearerAuth
+// @Router   /api/v1/reports/subscriptions [get]
+func (ctl *ReportController) GetBySubscription(c *gin.Context) {
+	var q dtos.SpendingBySubscriptionQuery
+	if err := c.ShouldBindQuery(&q); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := ctl.uc.SpendingBySubscription(c.Request.Context(), c.GetString("user_id"), q.From, q.To)
+	if err != nil {
+		respondErr(c, err)
+		return
+	}
+
+	items := make([]dtos.SubscriptionSpendingResponse, 0, len(res.Items))
+	for _, s := range res.Items {
+		items = append(items, dtos.SubscriptionSpendingResponse{
+			SubscriptionID: s.SubscriptionID,
+			Name:           s.Name,
+			Category:       s.Category,
+			Type:           s.Type,
+			Status:         s.Status,
+			Count:          s.Count,
+			Total:          s.Total,
+		})
+	}
+	c.JSON(http.StatusOK, dtos.SpendingBySubscriptionResponse{
+		From:  res.From,
+		To:    res.To,
+		Total: res.Total,
+		Items: items,
+	})
+}
+
 // Helpers
 func respondErr(c *gin.Context, err error) {
+	if errors.Is(err, usecases.ErrValidation) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	log.Printf("report: subscription service: %v", err)
 	c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 }
