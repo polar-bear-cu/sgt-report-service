@@ -8,12 +8,68 @@ definitions:
       timestamp:
         type: string
     type: object
+  dtos.MonthTotalResponse:
+    properties:
+      month:
+        type: string
+      total:
+        type: number
+    type: object
+  dtos.MonthlySpendingResponse:
+    properties:
+      averagePerMonth:
+        type: number
+      months:
+        items:
+          $ref: '#/definitions/dtos.MonthTotalResponse'
+        type: array
+      total:
+        type: number
+    type: object
 info:
   contact: {}
   description: Subscription spending report for the Subglutee project
   title: Report Service API
   version: "1.0"
 paths:
+  /api/v1/reports/monthly:
+    get:
+      parameters:
+      - in: query
+        maximum: 24
+        minimum: 1
+        name: months
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.MonthlySpendingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: spending per month, the last item is the current month (still in progress)
+      tags:
+      - reports
   /health:
     get:
       produces:

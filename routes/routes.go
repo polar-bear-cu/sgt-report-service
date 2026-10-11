@@ -18,4 +18,7 @@ func Register(r *gin.Engine, report *controllers.ReportController, jwtSecret str
 
 	v1 := r.Group("/api/v1")
 	v1.Use(middlewares.RequireAuth(jwtSecret))
+
+	reports := v1.Group("/reports")
+	reports.GET("/monthly", report.GetMonthly)
 }
