@@ -188,6 +188,29 @@ func (u *ReportUsecase) MonthCharges(ctx context.Context, userID, month string) 
 	return res, nil
 }
 
+type ChargesExport struct {
+	From  string
+	To    string
+	Items []Charge
+}
+
+// ExportCharges lists every charge in a month range (default: the last 12 months), oldest first.
+func (u *ReportUsecase) ExportCharges(ctx context.Context, userID, from, to string) (ChargesExport, error) {
+	start, end, err := u.monthRange(from, to)
+	if err != nil {
+		return ChargesExport{}, err
+	}
+
+	charges, err := u.charges.ListCharges(ctx, userID, start, end.AddDate(0, 1, 0))
+	if err != nil {
+		return ChargesExport{}, err
+	}
+	for i := range charges {
+		charges[i].ChargedAt = charges[i].ChargedAt.In(u.loc)
+	}
+	return ChargesExport{From: start.Format(monthFormat), To: end.Format(monthFormat), Items: charges}, nil
+}
+
 // monthRange returns the first day of month from and of month to, both included.
 func (u *ReportUsecase) monthRange(from, to string) (time.Time, time.Time, error) {
 	end := u.monthStart(time.Now())

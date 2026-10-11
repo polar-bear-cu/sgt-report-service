@@ -1,9 +1,14 @@
 package controllers
 
 import (
+	"bytes"
+	"encoding/csv"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/polar-bear-cu/sgt-report-service/dtos"
@@ -143,6 +148,54 @@ func (ctl *ReportController) GetCharges(c *gin.Context) {
 		Categories: categories,
 		Items:      items,
 	})
+}
+
+// ExportCharges godoc
+// @Summary  download every charge in a month range (default: last 12 months) as CSV
+// @Tags     reports
+// @Produce  text/csv
+// @Param    query  query  dtos.ExportChargesQuery  false  "from / to as YYYY-MM, both included"
+// @Success  200    {file}    file
+// @Failure  400    {object}  map[string]string
+// @Failure  401    {object}  map[string]string
+// @Failure  502    {object}  map[string]string
+// @Security BearerAuth
+// @Router   /api/v1/reports/export [get]
+func (ctl *ReportController) ExportCharges(c *gin.Context) {
+	var q dtos.ExportChargesQuery
+	if err := c.ShouldBindQuery(&q); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := ctl.uc.ExportCharges(c.Request.Context(), c.GetString("user_id"), q.From, q.To)
+	if err != nil {
+		respondErr(c, err)
+		return
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString("\ufeff") // BOM so Excel opens UTF-8 (e.g. Thai names) correctly
+	w := csv.NewWriter(&buf)
+	_ = w.Write([]string{"date", "subscription", "category", "type", "amount"})
+	for _, ch := range res.Items {
+		_ = w.Write([]string{
+			ch.ChargedAt.Format(time.DateOnly),
+			ch.Name,
+			ch.Category,
+			ch.Type,
+			strconv.FormatFloat(ch.Amount, 'f', 2, 64),
+		})
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		log.Printf("report: write csv: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="sgt-charges-%s_%s.csv"`, res.From, res.To))
+	c.Data(http.StatusOK, "text/csv; charset=utf-8", buf.Bytes())
 }
 
 // Helpers

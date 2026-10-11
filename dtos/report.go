@@ -64,3 +64,8 @@ type MonthChargesResponse struct {
 	Categories []CategoryTotalResponse `json:"categories"`
 	Items      []ChargeResponse        `json:"items"`
 }
+
+type ExportChargesQuery struct {
+	From string `form:"from"`
+	To   string `form:"to"`
+}

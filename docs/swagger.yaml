@@ -138,6 +138,46 @@ paths:
         category'
       tags:
       - reports
+  /api/v1/reports/export:
+    get:
+      parameters:
+      - in: query
+        name: from
+        type: string
+      - in: query
+        name: to
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 'download every charge in a month range (default: last 12 months) as
+        CSV'
+      tags:
+      - reports
   /api/v1/reports/monthly:
     get:
       parameters:

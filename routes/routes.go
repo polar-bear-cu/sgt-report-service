@@ -23,4 +23,5 @@ func Register(r *gin.Engine, report *controllers.ReportController, jwtSecret str
 	reports.GET("/monthly", report.GetMonthly)
 	reports.GET("/subscriptions", report.GetBySubscription)
 	reports.GET("/charges", report.GetCharges)
+	reports.GET("/export", report.ExportCharges)
 }
