@@ -3,7 +3,7 @@ package dtos
 import "time"
 
 type MonthlySpendingQuery struct {
-	Months int `form:"months" binding:"omitempty,min=1,max=24"`
+	Months *int `form:"months" binding:"omitempty,min=1,max=24"`
 }
 
 type MonthTotalResponse struct {

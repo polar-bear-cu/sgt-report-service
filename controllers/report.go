@@ -41,7 +41,12 @@ func (ctl *ReportController) GetMonthly(c *gin.Context) {
 		return
 	}
 
-	res, err := ctl.uc.MonthlySpending(c.Request.Context(), c.GetString("user_id"), q.Months)
+	n := 0
+	if q.Months != nil {
+		n = *q.Months
+	}
+
+	res, err := ctl.uc.MonthlySpending(c.Request.Context(), c.GetString("user_id"), n)
 	if err != nil {
 		respondErr(c, err)
 		return
