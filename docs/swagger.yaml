@@ -1,4 +1,26 @@
 definitions:
+  dtos.CategoryTotalResponse:
+    properties:
+      category:
+        type: string
+      total:
+        type: number
+    type: object
+  dtos.ChargeResponse:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      chargedAt:
+        type: string
+      name:
+        type: string
+      subscriptionId:
+        type: string
+      type:
+        type: string
+    type: object
   dtos.HealthResponse:
     properties:
       serviceName:
@@ -7,6 +29,23 @@ definitions:
         type: string
       timestamp:
         type: string
+    type: object
+  dtos.MonthChargesResponse:
+    properties:
+      categories:
+        items:
+          $ref: '#/definitions/dtos.CategoryTotalResponse'
+        type: array
+      count:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/dtos.ChargeResponse'
+        type: array
+      month:
+        type: string
+      total:
+        type: number
     type: object
   dtos.MonthTotalResponse:
     properties:
@@ -62,6 +101,43 @@ info:
   title: Report Service API
   version: "1.0"
 paths:
+  /api/v1/reports/charges:
+    get:
+      parameters:
+      - in: query
+        name: month
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.MonthChargesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 'charges of one month (default: current month) with the total of each
+        category'
+      tags:
+      - reports
   /api/v1/reports/monthly:
     get:
       parameters:

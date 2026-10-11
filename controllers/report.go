@@ -97,6 +97,54 @@ func (ctl *ReportController) GetBySubscription(c *gin.Context) {
 	})
 }
 
+// GetCharges godoc
+// @Summary  charges of one month (default: current month) with the total of each category
+// @Tags     reports
+// @Produce  json
+// @Param    query  query     dtos.MonthChargesQuery  false  "month as YYYY-MM"
+// @Success  200    {object}  dtos.MonthChargesResponse
+// @Failure  400    {object}  map[string]string
+// @Failure  401    {object}  map[string]string
+// @Failure  502    {object}  map[string]string
+// @Security BearerAuth
+// @Router   /api/v1/reports/charges [get]
+func (ctl *ReportController) GetCharges(c *gin.Context) {
+	var q dtos.MonthChargesQuery
+	if err := c.ShouldBindQuery(&q); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := ctl.uc.MonthCharges(c.Request.Context(), c.GetString("user_id"), q.Month)
+	if err != nil {
+		respondErr(c, err)
+		return
+	}
+
+	categories := make([]dtos.CategoryTotalResponse, 0, len(res.Categories))
+	for _, cat := range res.Categories {
+		categories = append(categories, dtos.CategoryTotalResponse{Category: cat.Category, Total: cat.Total})
+	}
+	items := make([]dtos.ChargeResponse, 0, len(res.Items))
+	for _, ch := range res.Items {
+		items = append(items, dtos.ChargeResponse{
+			SubscriptionID: ch.SubscriptionID,
+			Name:           ch.Name,
+			Category:       ch.Category,
+			Type:           ch.Type,
+			Amount:         ch.Amount,
+			ChargedAt:      ch.ChargedAt,
+		})
+	}
+	c.JSON(http.StatusOK, dtos.MonthChargesResponse{
+		Month:      res.Month,
+		Total:      res.Total,
+		Count:      res.Count,
+		Categories: categories,
+		Items:      items,
+	})
+}
+
 // Helpers
 func respondErr(c *gin.Context, err error) {
 	if errors.Is(err, usecases.ErrValidation) {

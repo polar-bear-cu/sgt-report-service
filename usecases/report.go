@@ -138,22 +138,72 @@ func (u *ReportUsecase) SpendingBySubscription(ctx context.Context, userID, from
 	return res, nil
 }
 
+type CategoryTotal struct {
+	Category string
+	Total    float64
+}
+
+type MonthCharges struct {
+	Month      string
+	Total      float64
+	Count      int
+	Categories []CategoryTotal
+	Items      []Charge
+}
+
+// MonthCharges lists the charges of one month (default: the current month), oldest first,
+// with the total of each category, highest first.
+func (u *ReportUsecase) MonthCharges(ctx context.Context, userID, month string) (MonthCharges, error) {
+	start := u.monthStart(time.Now())
+	if month != "" {
+		t, err := u.parseMonth(month, "month")
+		if err != nil {
+			return MonthCharges{}, err
+		}
+		start = t
+	}
+
+	charges, err := u.charges.ListCharges(ctx, userID, start, start.AddDate(0, 1, 0))
+	if err != nil {
+		return MonthCharges{}, err
+	}
+
+	res := MonthCharges{Month: start.Format(monthFormat), Count: len(charges), Items: make([]Charge, 0, len(charges))}
+	byCategory := make(map[string]float64)
+	for _, c := range charges {
+		c.ChargedAt = c.ChargedAt.In(u.loc)
+		res.Items = append(res.Items, c)
+		byCategory[c.Category] += c.Amount
+		res.Total += c.Amount
+	}
+
+	res.Categories = make([]CategoryTotal, 0, len(byCategory))
+	for cat, total := range byCategory {
+		res.Categories = append(res.Categories, CategoryTotal{Category: cat, Total: round2(total)})
+	}
+	slices.SortFunc(res.Categories, func(a, b CategoryTotal) int {
+		return cmp.Or(cmp.Compare(b.Total, a.Total), cmp.Compare(a.Category, b.Category))
+	})
+	res.Total = round2(res.Total)
+	return res, nil
+}
+
 // monthRange returns the first day of month from and of month to, both included.
 func (u *ReportUsecase) monthRange(from, to string) (time.Time, time.Time, error) {
 	end := u.monthStart(time.Now())
 	if to != "" {
-		t, err := time.ParseInLocation(monthFormat, to, u.loc)
+		t, err := u.parseMonth(to, "to")
 		if err != nil {
-			return time.Time{}, time.Time{}, fmt.Errorf("%w: to must be YYYY-MM", ErrValidation)
+			return time.Time{}, time.Time{}, err
 		}
 		end = t
 	}
 
 	start := end.AddDate(0, -(defaultMonths - 1), 0)
 	if from != "" {
-		t, err := time.ParseInLocation(monthFormat, from, u.loc)
+		t, err := u.parseMonth(from, "from")
 		if err != nil {
-			return time.Time{}, time.Time{}, fmt.Errorf("%w: from must be YYYY-MM", ErrValidation)
+			return time.Time{}, time.Time{}, err
 		}
 		start = t
 	}
@@ -165,6 +215,14 @@ func (u *ReportUsecase) monthRange(from, to string) (time.Time, time.Time, error
 		return time.Time{}, time.Time{}, fmt.Errorf("%w: range must be at most %d months", ErrValidation, maxMonths)
 	}
 	return start, end, nil
+}
+
+func (u *ReportUsecase) parseMonth(s, field string) (time.Time, error) {
+	t, err := time.ParseInLocation(monthFormat, s, u.loc)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("%w: %s must be YYYY-MM", ErrValidation, field)
+	}
+	return t, nil
 }
 
 func (u *ReportUsecase) monthStart(t time.Time) time.Time {
