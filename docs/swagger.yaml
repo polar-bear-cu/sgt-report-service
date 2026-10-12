@@ -1,4 +1,26 @@
 definitions:
+  dtos.CategoryTotalResponse:
+    properties:
+      category:
+        type: string
+      total:
+        type: number
+    type: object
+  dtos.ChargeResponse:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      chargedAt:
+        type: string
+      name:
+        type: string
+      subscriptionId:
+        type: string
+      type:
+        type: string
+    type: object
   dtos.HealthResponse:
     properties:
       serviceName:
@@ -8,11 +30,69 @@ definitions:
       timestamp:
         type: string
     type: object
-  dtos.ReportResponse:
+  dtos.MonthChargesResponse:
     properties:
-      subscriptionCount:
+      categories:
+        items:
+          $ref: '#/definitions/dtos.CategoryTotalResponse'
+        type: array
+      count:
         type: integer
-      userId:
+      items:
+        items:
+          $ref: '#/definitions/dtos.ChargeResponse'
+        type: array
+      month:
+        type: string
+      total:
+        type: number
+    type: object
+  dtos.MonthTotalResponse:
+    properties:
+      month:
+        type: string
+      total:
+        type: number
+    type: object
+  dtos.MonthlySpendingResponse:
+    properties:
+      averagePerMonth:
+        type: number
+      months:
+        items:
+          $ref: '#/definitions/dtos.MonthTotalResponse'
+        type: array
+      total:
+        type: number
+    type: object
+  dtos.SpendingBySubscriptionResponse:
+    properties:
+      from:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dtos.SubscriptionSpendingResponse'
+        type: array
+      to:
+        type: string
+      total:
+        type: number
+    type: object
+  dtos.SubscriptionSpendingResponse:
+    properties:
+      category:
+        type: string
+      count:
+        type: integer
+      name:
+        type: string
+      status:
+        type: string
+      subscriptionId:
+        type: string
+      total:
+        type: number
+      type:
         type: string
     type: object
 info:
@@ -21,22 +101,159 @@ info:
   title: Report Service API
   version: "1.0"
 paths:
-  /api/v1/reports/me:
+  /api/v1/reports/charges:
     get:
+      parameters:
+      - in: query
+        name: month
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dtos.ReportResponse'
+            $ref: '#/definitions/dtos.MonthChargesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "502":
           description: Bad Gateway
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: spending report for the current user
+      security:
+      - BearerAuth: []
+      summary: 'charges of one month (default: current month) with the total of each
+        category'
+      tags:
+      - reports
+  /api/v1/reports/export:
+    get:
+      parameters:
+      - in: query
+        name: from
+        type: string
+      - in: query
+        name: to
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 'download every charge in a month range (default: last 12 months) as
+        CSV'
+      tags:
+      - reports
+  /api/v1/reports/monthly:
+    get:
+      parameters:
+      - in: query
+        maximum: 24
+        minimum: 1
+        name: months
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.MonthlySpendingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: spending per month, the last item is the current month (still in progress)
+      tags:
+      - reports
+  /api/v1/reports/subscriptions:
+    get:
+      parameters:
+      - in: query
+        name: from
+        type: string
+      - in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.SpendingBySubscriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 'total spent per subscription in a month range (default: last 12 months),
+        highest first'
       tags:
       - reports
   /health:
@@ -51,4 +268,10 @@ paths:
       summary: health check
       tags:
       - ops
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer " followed by the access token from sgt-auth-service.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
