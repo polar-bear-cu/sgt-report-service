@@ -24,8 +24,18 @@ import (
 // @title        Report Service API
 // @version      1.0
 // @description  Subscription spending report for the Subglutee project
+//
+// @securityDefinitions.apikey  BearerAuth
+// @in                          header
+// @name                        Authorization
+// @description                 Type "Bearer " followed by the access token from sgt-auth-service.
 func main() {
 	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	loc, err := time.LoadLocation("Asia/Bangkok")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,11 +47,11 @@ func main() {
 	defer func() { _ = subConn.Close() }()
 
 	src := clients.NewSubscriptionClient(subConn)
-	uc := usecases.NewReport(src)
+	uc := usecases.NewReport(src, loc)
 	reportCtrl := controllers.NewReport(uc)
 
 	r := gin.Default()
-	routes.Register(r, reportCtrl, cfg.SwaggerEnabled)
+	routes.Register(r, reportCtrl, cfg.JWTSecret, cfg.SwaggerEnabled)
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: r}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
